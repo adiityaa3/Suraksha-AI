@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Suraksha AI – Climate Risk Forecasting System</title>
+  <meta name="description" content="AI-powered climate risk prediction for floods, landslides, and crop failures. Hyperlocal alerts for farming communities across India."/>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ range(1000,9999) | random }}"/>
+</head>
+<body>
+
+<!-- ── Floating Particles ──────────────────────────────────────────────────── -->
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+<div class="particle"></div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     NAVIGATION
+══════════════════════════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo">🌱</div>
+    Suraksha AI
+  </div>
+
+  <div class="nav-links">
+    <button class="nav-link active" id="navPredictor" onclick="goTo('sec-predictor',this)">Predictor</button>
+    <button class="nav-link" id="navAdvisory" onclick="goTo('sec-advisory',this)">🌾 Farmer Advisory</button>
+    <button class="nav-link" id="navMap" onclick="goTo('sec-map',this)">Map</button>
+    <button class="nav-link" id="navConcept" onclick="goTo('sec-concept',this)">How It Works</button>
+    <button class="nav-link" id="navCommunity" onclick="goTo('sec-community',this)">Community</button>
+  </div>
+
+  <!-- Language Toggle -->
+  <div class="lang-toggle">
+    <button class="lang-btn active" data-lang="en" onclick="applyLang('en')">EN</button>
+    <button class="lang-btn" data-lang="hi" onclick="applyLang('hi')">हि</button>
+    <button class="lang-btn" data-lang="kn" onclick="applyLang('kn')">ಕ</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-deco hd1">🌿</div>
+  <div class="hero-deco hd2">🍃</div>
+
+  <div class="hero-badge">🏆 Final Year Innovation Project — Agriculture &amp; Climate Tech</div>
+  <h1>Suraksha AI<br><em>Climate Risk Forecasting System</em></h1>
+  <p class="hero-sub">
+    Hyperlocal, real-time climate risk alerts for farming communities.
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION 1 — PREDICTOR
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-predictor">
+  <div class="sec-title" id="title-predictor">🔍 Multi-Hazard Risk Predictor</div>
+  <p class="sec-sub" id="sub-predictor">
+    Select your state, location and environmental conditions to receive a real-time,
+    AI-generated climate risk assessment powered by a Random Forest classifier trained
+    on 2,000+ data points.
+  </p>
+
+  <div class="pred-grid">
+
+    <!-- ── Input Panel ── -->
+    <div class="card">
+      <div class="clabel">⚙️ <span data-i18n="input_params">Input Parameters</span></div>
+
+      <div class="fg">
+        <div class="fl">📍 <span data-i18n="select_state">Select State / Region</span></div>
+        <select id="selState" onchange="window._exactLocOverride=null; window._exactCoords=null; populateLocs()">
+          <option value="karnataka">Karnataka</option>
+          <option value="maharashtra">Maharashtra</option>
+          <option value="north">North India</option>
+          <option value="tamilnadu">Tamil Nadu</option>
+          <option value="westbengal">West Bengal</option>
+          <option value="telangana">Telangana</option>
+          <option value="kerala">Kerala</option>
+          <option value="gujarat">Gujarat</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <div class="fl" style="justify-content: space-between;">
+          <span>🏘️ <span data-i18n="select_loc">Select Location (Village / Block)</span></span>
+          <button class="locate-btn" onclick="geolocateUser()" title="Use GPS to find nearest village">🌍 Locate Me</button>
+        </div>
+        <select id="selLoc" onchange="window._exactLocOverride=null; window._exactCoords=null; fetchLiveWeather(document.getElementById('selState').value, this.value)"></select>
+      </div>
+
+      <div class="fg">
+        <div class="fl">🌡️ <span data-i18n="temperature">Current Temperature (°C)</span></div>
+        <div class="sr">
+          <input type="range" id="tempR" min="15" max="45" value="28" step="1"
+                 oninput="document.getElementById('tempV').textContent=this.value+'°C'"/>
+          <span class="sv" id="tempV">28°C</span>
+        </div>
+        <div class="sh"><span>15°C Cool</span><span>30°C Moderate</span><span>45°C Hot</span></div>
+
+        <!-- Live Weather Badge — populated by JS after location selection -->
+        <div id="live-weather-badge" class="live-weather-badge" style="display:none">
+          <div class="lwb-header">
+            <span class="lwb-dot"></span>
+            <span class="lwb-label">LIVE WEATHER</span>
+            <span class="lwb-source" id="lwb-source">Open-Meteo</span>
+          </div>
+          <div class="lwb-stats">
+            <div class="lwb-stat">
+              <span class="lwb-icon">🌡️</span>
+              <span class="lwb-val" id="lwb-temp">—</span>
+              <span class="lwb-unit">°C</span>
+            </div>
+            <div class="lwb-stat">
+              <span class="lwb-icon">💧</span>
+              <span class="lwb-val" id="lwb-hum">—</span>
+              <span class="lwb-unit">%</span>
+            </div>
+            <div class="lwb-stat">
+              <span class="lwb-icon">🌬️</span>
+              <span class="lwb-val" id="lwb-wind">—</span>
+              <span class="lwb-unit">km/h</span>
+            </div>
+            <div class="lwb-stat">
+              <span class="lwb-icon" id="lwb-icon">⛅</span>
+              <span class="lwb-desc" id="lwb-desc">—</span>
+            </div>
+          </div>
+          <div class="lwb-note" id="lwb-note"></div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="fl">💧 <span data-i18n="soil_moisture">Soil Moisture Level</span></div>
+        <select id="selMoist">
+          <option value="low" data-i18n-opt="moisture_low">Low (Dry Conditions)</option>
+          <option value="moderate" selected data-i18n-opt="moisture_mod">Moderate (Normal)</option>
+          <option value="high" data-i18n-opt="moisture_high">High (Saturated Soil)</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <div class="fl">🌬️ <span data-i18n="wind_speed">Wind Speed Condition</span></div>
+        <select id="selWind">
+          <option value="calm" data-i18n-opt="wind_calm">Calm (0–20 km/h)</option>
+          <option value="moderate" selected data-i18n-opt="wind_mod">Moderate (20–50 km/h)</option>
+          <option value="strong" data-i18n-opt="wind_strong">Strong (50+ km/h)</option>
+        </select>
+      </div>
+
+      <div class="fg">
+        <div class="fl">🗓️ <span data-i18n="season">Current Season</span></div>
+        <select id="selSeason">
+          <option value="kharif" data-i18n-opt="kharif">Kharif (June–November)</option>
+          <option value="rabi" data-i18n-opt="rabi">Rabi (November–April)</option>
+          <option value="zaid" data-i18n-opt="zaid">Zaid (April–June)</option>
+        </select>
+      </div>
+
+      <button class="pbtn" id="predictBtn" onclick="runPred()">
+        <div class="spinner"></div>
+        <span class="btn-text" id="btn-text">🔍 Predict Climate Risk</span>
+      </button>
+
+      <!-- ML Model Info -->
+      <div style="margin-top:1rem;padding:.8rem;background:rgba(219,234,254,0.5);border-radius:8px;border:1px solid #bfdbfe">
+        <div style="font-size:.67rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#1d4ed8;margin-bottom:.35rem">🤖 ML Models Active</div>
+        <div style="font-size:.76rem;color:#1e3a5f;font-weight:500;line-height:1.5">
+          <strong>Random Forest</strong> (120 trees) → Flood &amp; Crop Risk<br>
+          <strong>Linear Regression</strong> → Rainfall Forecasting
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Output Panel ── -->
+    <div style="display: flex; flex-direction: column; height: 100%;">
+
+      <!-- Telemetry Map (Always visible taking up space) -->
+      <div style="position: relative; flex-grow: 1; min-height: 580px;">
+        <div id="map" style="position: absolute; top:0; left:0; right:0; bottom:0; border-radius: var(--r); border: 1.5px solid var(--border); box-shadow: var(--sh); z-index: 1;"></div>
+        
+        <!-- Floating Telemetry Indicator -->
+        <div id="map-radar-overlay" style="position:absolute; top:20px; left:20px; z-index:400; pointer-events:none; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); padding:8px 14px; border-radius:20px; border:1px solid rgba(34,197,94,0.4); display:flex; align-items:center; gap:8px;">
+          <div style="width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 10px #22c55e;animation:pulse-opacity 1.5s infinite"></div>
+          <span style="color:#22c55e;font-size:.65rem;font-weight:800;letter-spacing:0.1em;">LIVE TELEMETRY</span>
+        </div>
+      </div>
+
+    </div><!-- /output col -->
+  </div><!-- /pred-grid -->
+
+  <!-- Results (Now outside the grid for full width!) -->
+  <div id="results">
+
+        <!-- Alert Banner Area -->
+        <div style="display: flex; gap: 12px; align-items: stretch; margin-bottom: 1.1rem; flex-wrap: wrap;">
+          <div class="abanner green" id="abanner" style="flex: 1; margin-bottom: 0;">
+            <span id="aicon">✅</span>
+            <span id="atext">Conditions are safe. Risk levels are low.</span>
+          </div>
+          <!-- Farmer Notification Group -->
+          <div id="broadcastGroup" style="display: none; align-items: center; gap: 8px;">
+            <div style="font-size:.8rem; font-weight:700; color:var(--text)">Auto-Route:</div>
+            <button class="pbtn" id="btnBroadcast" onclick="broadcastAlert()" style="width: auto; padding: 0 1.2rem; margin-top: 0; background: linear-gradient(135deg, var(--r600), var(--r400)); box-shadow: 0 5px 18px rgba(220,38,38,0.35);">
+              🚨 <span data-i18n="btn_broadcast_auto">Broadcast to all Registered Farmers</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Row -->
+        <div class="mrow">
+          <div class="mc">
+            <div class="mc-i">🌡️</div>
+            <div class="mc-l" data-i18n="temperature">Temperature</div>
+            <div class="mc-v" id="mT">—</div>
+            <div class="mc-u">°C</div>
+          </div>
+          <div class="mc">
+            <div class="mc-i">🌧️</div>
+            <div class="mc-l" data-i18n="pred_rainfall">Predicted Rainfall</div>
+            <div class="mc-v" id="mR">—</div>
+            <div class="mc-u">mm / month</div>
+          </div>
+          <div class="mc">
+            <div class="mc-i">🌊</div>
+            <div class="mc-l" data-i18n="flood_risk">Flood Risk</div>
+            <div class="mc-v" id="mF" style="font-size:1.08rem;margin-top:4px">—</div>
+            <div class="mc-u">Level</div>
+          </div>
+          <div class="mc">
+            <div class="mc-i">⛰️</div>
+            <div class="mc-l" data-i18n="landslide_risk">Landslide Risk</div>
+            <div class="mc-v" id="mL" style="font-size:1.08rem;margin-top:4px">—</div>
+            <div class="mc-u">Level</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tbar">
+          <button class="tb active" id="tab-risk"    onclick="switchTab('risks',this)" data-i18n="tab_risk">⚠️ Risk Assessment</button>
+          <button class="tb"         id="tab-chart"   onclick="switchTab('chart',this)" data-i18n="tab_chart">📊 Rainfall Chart</button>
+          <button class="tb"         id="tab-crops"   onclick="switchTab('crops',this)" data-i18n="tab_crops">🌾 Crop Advisory</button>
+          <button class="tb"         id="tab-gauge"   onclick="switchTab('gauge',this)" data-i18n="tab_gauge">📈 Rainfall Gauge</button>
+          <button class="tb"         id="tab-weather" onclick="switchTab('weather',this)" data-i18n="tab_weather">🌤️ Weather</button>
+        </div>
+
+        <!-- Tab: Risk Assessment -->
+        <div class="tp active card" id="tp-risks">
+          <div class="clabel">⚠️ <span data-i18n="multihazard_title">Multi-Hazard Risk Assessment (Random Forest)</span></div>
+          <div id="bFlood"></div>
+          <div id="bLand"></div>
+          <div id="bCrop"></div>
+        </div>
+
+        <!-- Tab: Chart -->
+        <div class="tp card" id="tp-chart">
+          <div class="clabel">📊 <span data-i18n="chart_title">Temperature vs Predicted Rainfall (Linear Regression)</span></div>
+          <div class="ch-wrap"><canvas id="myChart"></canvas></div>
+        </div>
+
+        <!-- Tab: Crops -->
+        <div class="tp card" id="tp-crops">
+          <div class="clabel">🌾 <span data-i18n="crop_rec_title">Recommended Crops for Current Conditions</span></div>
+          <div class="ctags" id="cropWrap"></div>
+          <div style="margin-top:1rem;padding-top:.9rem;border-top:1.5px solid var(--border)">
+            <div class="clabel">🗓️ <span data-i18n="seasonal_action">Seasonal Action Plan</span></div>
+            <div id="seasAdv"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Gauge -->
+        <div class="tp card" id="tp-gauge">
+          <div class="clabel">📈 <span data-i18n="gauge_title">Rainfall Level Indicator</span></div>
+          <div id="gaugeOut"></div>
+        </div>
+
+        <!-- Tab: Weather Insights -->
+        <div class="tp card" id="tp-weather">
+          <div class="clabel">🌤️ <span data-i18n="weather_title">Weather Insights</span></div>
+          <div class="wi-row">
+            <div class="wi-card">
+              <div class="wi-icon">💧</div>
+              <div class="wi-val" id="wi-humidity">—</div>
+              <div class="wi-lbl" data-i18n="humidity">Humidity</div>
+            </div>
+            <div class="wi-card">
+              <div class="wi-icon">🌡️</div>
+              <div class="wi-val" id="wi-pressure">—</div>
+              <div class="wi-lbl" data-i18n="pressure">Pressure</div>
+            </div>
+            <div class="wi-card">
+              <div class="wi-icon">☀️</div>
+              <div class="wi-val" id="wi-uv">—</div>
+              <div class="wi-lbl" data-i18n="uv_index">UV Index</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advisory -->
+        <div class="adv">
+          <div class="adv-h">
+            <div class="adv-dot">🌾</div>
+            <div class="adv-title" id="adv-title-text" data-i18n="advisory_title">Farmer Advisory — Ground Level Action Plan</div>
+          </div>
+          <div class="adv-text" id="advText"></div>
+        </div>
+
+        <!-- Go to Advisory CTA -->
+        <div style="margin-top:1rem;text-align:center">
+          <button class="pbtn" style="max-width:320px;margin:0 auto" onclick="goToAdvisoryFromResult()">
+            🌾 <span data-i18n="view_full_advisory">View Full Farmer Advisory</span> →
+          </button>
+        </div>
+
+      </div><!-- /results -->
+</div>
+
+<hr class="div"/>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION 2 — FARMER ADVISORY
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-advisory">
+  <div class="sec-title">🌾 <span data-i18n="advisory_section_title">Farmer Advisory</span></div>
+  <p class="sec-sub" data-i18n="advisory_section_sub">
+    AI-powered crop recommendations, smart irrigation schedules, pest alerts, soil health scores and market prices — tailored to your exact field conditions.
+  </p>
+
+  <!-- Advisory Input Card -->
+  <div class="card adv-input-card">
+    <div class="clabel">⚙️ <span data-i18n="adv_run_title">Run Advisory (uses same inputs as Predictor)</span></div>
+    <div class="adv-input-row">
+      <div class="adv-input-info" id="adv-input-summary">
+        <span style="font-size:1.4rem">🌾</span>
+        <div>
+          <div style="font-weight:700;font-size:.9rem" id="adv-loc-display">Select location in Predictor above &amp; click Run</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px" id="adv-params-display">Configure parameters in the Predictor section first</div>
+        </div>
+      </div>
+      <button class="pbtn adv-run-btn" id="advRunBtn" onclick="runAdvisory()">
+        <div class="spinner"></div>
+        <span class="btn-text" id="adv-btn-text">🌾 <span data-i18n="run_advisory_btn">Generate Farmer Advisory</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Advisory Placeholder -->
+  <div id="adv-placeholder" style="text-align:center;padding:3rem 2rem;color:var(--muted)">
+    <div style="font-size:3.5rem;margin-bottom:1rem">🌾</div>
+    <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:.5rem" data-i18n="adv_placeholder_title">Run a Prediction First</div>
+    <div style="font-size:.85rem;max-width:340px;margin:0 auto;line-height:1.7" data-i18n="adv_placeholder_sub">
+      Use the Predictor above to set your location and conditions, then click <strong>"Generate Farmer Advisory"</strong>.
+    </div>
+  </div>
+
+  <!-- Advisory Results (hidden until run) -->
+  <div id="adv-results" style="display:none">
+
+    <!-- 5-Day Forecast Strip -->
+    <div class="card adv-forecast-card">
+      <div class="clabel">🌤️ <span data-i18n="forecast_title">5-Day Rainfall Forecast</span></div>
+      <div class="forecast-strip" id="forecastStrip"></div>
+    </div>
+
+    <!-- Crop Cards Grid -->
+    <div style="margin-top:1.5rem">
+      <div class="clabel" style="font-size:.8rem;margin-bottom:.9rem">🌾 <span data-i18n="crop_cards_title">Recommended Crops for Your Conditions</span></div>
+      <div class="crop-cards-grid" id="cropCardsGrid"></div>
+    </div>
+
+    <!-- 3-column row: Irrigation + Soil Health + Insurance -->
+    <div class="adv-trio-grid">
+
+      <!-- Smart Irrigation -->
+      <div class="card">
+        <div class="clabel">💧 <span data-i18n="irrigation_title">Smart Irrigation Schedule</span></div>
+        <div id="irrigationCard"></div>
+      </div>
+
+      <!-- Soil Health -->
+      <div class="card">
+        <div class="clabel">🧪 <span data-i18n="soil_health_title">Soil Health Score</span></div>
+        <div id="soilHealthCard"></div>
+      </div>
+
+      <!-- Crop Insurance -->
+      <div class="card">
+        <div class="clabel">🛡️ <span data-i18n="insurance_title">Crop Insurance</span></div>
+        <div id="insuranceCard"></div>
+      </div>
+
+    </div>
+
+    <!-- Pest & Disease Alerts -->
+    <div class="card" style="margin-top:1.5rem">
+      <div class="clabel">🪲 <span data-i18n="pest_title">Pest &amp; Disease Risk Alerts</span></div>
+      <div id="pestAlerts"></div>
+    </div>
+
+    <!-- Market Prices + KVK Contact -->
+    <div class="adv-market-kvk-grid">
+
+      <!-- Market Prices -->
+      <div class="card">
+        <div class="clabel">📈 <span data-i18n="market_title">Live Market Price Alerts</span>
+          <span class="market-source-badge" id="market-source-badge" style="display:none"></span>
+        </div>
+        <div id="marketPrices"></div>
+        <div class="market-refresh-row" id="market-refresh-row" style="display:none">
+          <span id="market-last-updated"></span>
+          <button class="market-refresh-btn" onclick="refreshMarketPrices()" id="market-refresh-btn">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- KVK Contact -->
+      <div class="card kvk-card">
+        <div class="clabel">📞 <span data-i18n="kvk_title">Nearest KVK Contact</span></div>
+        <div id="kvkCard"></div>
+      </div>
+
+    </div>
+
+  </div><!-- /adv-results -->
+</div>
+
+<hr class="div"/>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION 3 — MAP
+══════════════════════════════════════════════════════════════════════════ -->
+
+
+<hr class="div"/>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION 4 — HOW IT WORKS
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="sec-concept">
+  <div class="sec-title" data-i18n="how_title">🤖 How It Works</div>
+  <p class="sec-sub" data-i18n="how_sub">The Flask backend trains ML models at startup and serves predictions via a REST API — no external services needed.</p>
+
+  <div class="insight">
+    <div class="ins-tag">🤖 AI/ML Pipeline</div>
+    <p class="ins-text">A <strong>Random Forest Classifier (120 trees)</strong> is trained at startup on 2,000 data points for flood and crop risk classification. A <strong>Linear Regression</strong> model maps temperature to monthly rainfall. All predictions are served through a <strong>Flask REST API</strong> at <code style="background:rgba(0,0,0,0.07);padding:1px 6px;border-radius:4px">POST /api/predict</code>. A dedicated <code style="background:rgba(0,0,0,0.07);padding:1px 6px;border-radius:4px">POST /api/advisory</code> endpoint powers the full Farmer Advisory with crop cards, irrigation schedules, pest alerts, and soil health scoring.</p>
+    <div class="pipeline">
+      <div class="ps">📡 User Input</div><span class="pa">→</span>
+      <div class="ps">🐍 Flask API</div><span class="pa">→</span>
+      <div class="ps">🤖 Random Forest</div><span class="pa">→</span>
+      <div class="ps">📍 Risk Scoring</div><span class="pa">→</span>
+      <div class="ps">🌾 Farmer Advisory</div><span class="pa">→</span>
+      <div class="ps">🤝 Feedback Loop</div>
+    </div>
+  </div>
+</div>
+
+<hr class="div"/>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SECTION 5 — COMMUNITY FEEDBACK
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="community-wrapper" id="sec-community">
+  <div class="section" style="padding-top: 1rem; padding-bottom: 2rem; max-width: 1400px;">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <div class="sec-title" data-i18n="community_title">🤝 Community Ground Truth Feedback</div>
+      <p class="sec-sub" data-i18n="community_sub" style="max-width: 700px; margin: 0 auto;">
+        Village-level volunteers validate AI predictions and report local conditions.
+        Reports are stored securely in SQLite and persist across sessions.
+      </p>
+    </div>
+
+  <div class="com-grid">
+    <!-- ROW 1 -->
+    <!-- Farmer Registration Form -->
+    <div class="fb-form" id="farmer-reg-card">
+      <div class="fb-form-inner">
+        <div class="clabel">🌾 <span data-i18n="reg_alerts_title">Get SMS Alerts (Farmer Registration)</span></div>
+        <div class="fb-row">
+          <div>
+            <div class="fl" style="margin-bottom:5px">👤 <span data-i18n="reg_name">Name</span></div>
+            <input class="fi" id="regName" type="text" placeholder="Your name"/>
+          </div>
+          <div>
+            <div class="fl" style="margin-bottom:5px">📱 <span data-i18n="reg_phone">Phone Number</span></div>
+            <input class="fi" id="regPhone" type="text" placeholder="+919876543210" style="font-family:'DM Mono',monospace;"/>
+          </div>
+        </div>
+        <div class="fb-row">
+          <div>
+            <div class="fl" style="margin-bottom:5px">📍 <span data-i18n="reg_state">State</span></div>
+            <select class="fi" id="regState">
+              <option value="karnataka">Karnataka</option>
+              <option value="maharashtra">Maharashtra</option>
+              <option value="north">North India</option>
+              <option value="tamilnadu">Tamil Nadu</option>
+              <option value="westbengal">West Bengal</option>
+              <option value="telangana">Telangana</option>
+              <option value="kerala">Kerala</option>
+              <option value="gujarat">Gujarat</option>
+            </select>
+          </div>
+          <div>
+            <div class="fl" style="margin-bottom:5px">🏘️ <span data-i18n="reg_vil">Village</span></div>
+            <input class="fi" id="regVil" type="text" placeholder="Village name"/>
+          </div>
+        </div>
+        <p style="font-size:0.75rem; color:var(--muted); margin-top:0.5rem" data-i18n="reg_desc">
+          Register to receive automated Twilio SMS broadcasts during High Risk climate events in your region.
+        </p>
+      </div>
+      <button class="fb-btn" onclick="registerFarmer()" id="regBtn" style="background:linear-gradient(135deg, var(--g600), var(--g500))">
+        🔔 <span data-i18n="reg_btn">Register for Alerts</span>
+      </button>
+    </div>
+
+    <!-- Live Community Reports -->
+    <div class="card" style="margin-bottom:0">
+      <div class="clabel">📡 <span data-i18n="live_reports">Live Community Reports</span></div>
+      <div class="fb-list" id="fbList">
+        <!-- Populated by JS from Flask API -->
+      </div>
+    </div>
+
+    <!-- ROW 2 -->
+    <!-- Submit Ground Report Form -->
+    <div class="fb-form">
+      <div class="fb-form-inner">
+        <div class="clabel">📝 <span data-i18n="submit_report_title">Submit Ground Report</span></div>
+        <div class="fb-row">
+          <div>
+            <div class="fl" style="margin-bottom:5px">👤 <span data-i18n="your_name">Your Name</span></div>
+            <input class="fi" id="fbName" type="text" placeholder="Volunteer name"/>
+          </div>
+          <div>
+            <div class="fl" style="margin-bottom:5px">📍 <span data-i18n="village_block">Village / Block</span></div>
+            <input class="fi" id="fbVil" type="text" placeholder="e.g. Keshavapura, Mysore"/>
+          </div>
+        </div>
+        <div style="margin-bottom:.9rem">
+          <div class="fl" style="margin-bottom:5px">🌦️ <span data-i18n="conditions_observed">Conditions Observed</span></div>
+          <select class="fi" id="fbCond">
+            <option value="" data-i18n="select_condition">Select observed condition...</option>
+            <option>Heavy rainfall — fields waterlogged</option>
+            <option>Moderate rain — manageable drainage</option>
+            <option>Light rain — no issues reported</option>
+            <option>Dry conditions — no rain for several days</option>
+            <option>Flood water entered agricultural fields</option>
+            <option>Landslide observed on nearby slopes</option>
+            <option>Crop damage observed</option>
+            <option>Conditions are safe and normal</option>
+          </select>
+        </div>
+        <div style="margin-bottom:1rem; flex-grow: 1; display: flex; flex-direction: column;">
+          <div class="fl" style="margin-bottom:5px">✏️ <span data-i18n="additional_obs">Additional Observations</span></div>
+          <textarea class="fi" id="fbText" placeholder="Describe ground conditions — water levels, crop health, unusual weather..."></textarea>
+        </div>
+      </div>
+      <button class="fb-btn" onclick="submitFB()" id="submitFBBtn" data-i18n-btn="submit_report">📤 Submit Ground Report</button>
+    </div>
+
+    <!-- Community Impact Dashboard -->
+    <div class="card" style="background:var(--g50)">
+      <div class="clabel">📊 <span data-i18n="impact_dashboard">Community Impact Dashboard</span></div>
+      <div class="impact-grid">
+        <div class="imp-box"><div class="imp-v" id="rCount">—</div><div class="imp-l" data-i18n="reports_submitted">Reports Submitted</div></div>
+        <div class="imp-box"><div class="imp-v" id="statAcc">94%</div><div class="imp-l" data-i18n="pred_accuracy">Prediction Accuracy</div></div>
+        <div class="imp-box"><div class="imp-v" id="statStates">8</div><div class="imp-l" data-i18n="states_covered">States Covered</div></div>
+        <div class="imp-box"><div class="imp-v" id="statCrop">20%</div><div class="imp-l" data-i18n="crop_loss_reduced">Crop Loss Reduced</div></div>
+      </div>
+      <p style="font-size:.76rem;color:var(--muted);margin-top:.9rem;line-height:1.6;font-weight:500" data-i18n="impact_desc">
+        Volunteer ground reports validate AI predictions and continuously improve model accuracy.
+        This two-way feedback loop — incorporating indigenous knowledge — is Suraksha AI's core differentiator.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-links">
+    <a href="#sec-predictor">Predictor</a>
+    <a href="#sec-advisory">Farmer Advisory</a>
+    <a href="#sec-map">Map</a>
+    <a href="#sec-concept">How It Works</a>
+    <a href="#sec-community">Community</a>
+  </div>
+  <strong>Suraksha AI</strong> — A Scalable Climate Risk Forecasting System for Resilient Communities<br/>
+  Final Year Innovation Project · Agriculture, Rivers &amp; Ocean Produce Based Industries Theme<br/>
+  Multi-Hazard Integration · Farmer Advisory · Crop Insurance · Flask REST API · Random Forest ML<br/>
+  <span style="opacity:.45;font-size:.72rem">Built with Flask · scikit-learn · HTML/CSS/JS · Chart.js · Leaflet.js</span>
+</footer>
+
+<!-- ── Scripts ────────────────────────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ range(1000,9999) | random }}"></script>
+
+</body>
+</html>
