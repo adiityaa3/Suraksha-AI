@@ -1,9 +1,8 @@
-Flask==3.1.1
-Flask-Cors==6.0.1
-python-dotenv==1.1.1
-scikit-learn==1.7.1
-numpy==2.3.1
-pandas==2.3.1
-requests==2.32.4
+Flask
+Flask-Cors
+google-genai
+gTTS
+requests
+gunicorn
 twilio
-gunicorn==23.0.0
+python-dotenv
