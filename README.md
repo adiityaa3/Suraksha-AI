@@ -134,10 +134,6 @@ suraksha-ai/
 ├── .gitignore
 ├── .env.example
 │
-├── models/
-│   ├── predictor.py
-│   └── __init__.py
-│
 ├── services/
 │   ├── weather_api.py
 │   ├── market_api.py
@@ -151,10 +147,7 @@ suraksha-ai/
 │   ├── css/
 │   ├── js/
 │   └── images/
-│
-├── screenshots/
-│
-└── docs/
+
 ```
 
 ---
@@ -276,66 +269,6 @@ http://127.0.0.1:5000
 
 ---
 
-# 📷 Screenshots
-
-Add screenshots of your application inside the `screenshots/` folder.
-
-Example:
-
-```
-screenshots/
-├── dashboard.png
-├── prediction.png
-├── advisory.png
-├── weather.png
-├── market.png
-└── reports.png
-```
-
----
-
-# 🤝 Contributing
-
-Contributions are welcome!
-
-1. Fork the repository
-2. Create your feature branch
-
-```bash
-git checkout -b feature/new-feature
-```
-
-3. Commit your changes
-
-```bash
-git commit -m "Added new feature"
-```
-
-4. Push to your branch
-
-```bash
-git push origin feature/new-feature
-```
-
-5. Open a Pull Request
-
----
-
-# 👨‍💻 Author
-
-**Aditya Yandolli**
-
-- GitHub: https://github.com/adiityaa3
-- LinkedIn: *(Add your LinkedIn profile)*
-- Email: *(Add your email address)*
-
----
-
-# ⭐ Support
-
-If you found this project useful, please consider giving it a ⭐ on GitHub. It helps others discover the project and supports future development.
-
----
 
 # 📄 License
 
