@@ -51,7 +51,7 @@ print("[OK] Models ready -- Suraksha AI is online.")
 import sqlite3
 
 # ── Database Setup ────────────────────────────────────────────────────────────
-DB_PATH = "suraksha.db"
+DB_PATH = os.path.join("/tmp", "suraksha.db")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
